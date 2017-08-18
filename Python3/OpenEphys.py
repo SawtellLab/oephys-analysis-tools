@@ -107,7 +107,8 @@ def loadContinuous(filepath, dtype = float):
       'Invalid data type specified for loadContinous, valid types are float and np.int16'
 
     print("Loading continuous data...")
-
+    print(filepath)
+    
     ch = { }
 
     #read in the data
@@ -400,7 +401,8 @@ class ProgressBar:
         return str(self.prog_bar)
 #*************************************************************
 
-def pack_2(folderpath, filename = 'openephys.dat', source='100', channels = 'all', dref = None):
+def pack_2(rdatapath, savepath, filename = 'openephys.dat', source='100', 
+           channels = 'all', dref = None):
 
     '''Alternative version of pack which uses numpy's tofile function to write data.
     pack_2 is much faster than pack and avoids quantization noise incurred in pack due
@@ -417,7 +419,7 @@ def pack_2(folderpath, filename = 'openephys.dat', source='100', channels = 'all
            average of packed channels.
     '''
 
-    data_array = loadFolderToArray(folderpath, channels, np.int16, source)
+    data_array = loadFolderToArray(rdatapath, channels, np.int16, source)
 
     if dref:
         if dref == 'ave':
@@ -426,13 +428,16 @@ def pack_2(folderpath, filename = 'openephys.dat', source='100', channels = 'all
         else:
             print('Digital referencing to channel ' + str(dref))
             if channels == 'all':
-                channels = _get_sorted_channels(folderpath)
+                channels = _get_sorted_channels(rdatapath)
             reference = deepcopy(data_array[:,channels.index(dref)])
         for i in range(data_array.shape[1]):
             data_array[:,i] = data_array[:,i] - reference
 
     print('Packing data to file: ' + filename)
-    data_array.tofile(os.path.join(folderpath,filename))
+    data_array.tofile(os.path.join(savepath,filename))
+    chanlist = open(os.path.join(savepath,filename.replace('.dat','.chl')),'w')
+    chanlist.write(str([x-1 for x in channels]))
+    chanlist.close()
 
 def _get_sorted_channels(folderpath):
     return sorted([int(f.split('_CH')[1].split('.')[0]) for f in os.listdir(folderpath)
